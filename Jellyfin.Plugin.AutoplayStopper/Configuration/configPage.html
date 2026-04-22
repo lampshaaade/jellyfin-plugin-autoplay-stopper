@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <title>AutoPlay Stopper</title>
+</head>
+<body>
+<div id="AutoplayStopperConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
+     data-require="emby-input,emby-button,emby-select,emby-checkbox">
+
+    <div data-role="content">
+        <div class="content-primary">
+
+            <!-- En-tête -->
+            <div class="sectionTitleContainer flex align-items-center">
+                <h2 class="sectionTitle">🛑 AutoPlay Stopper</h2>
+            </div>
+
+            <p class="fieldDescription">
+                Ce plugin ajoute un bouton directement dans le lecteur vidéo Jellyfin
+                pour désactiver la lecture automatique de la session en cours.<br>
+                Idéal pour éviter qu'une série continue de jouer en cas d'endormissement.
+            </p>
+
+            <form id="AutoplayStopperConfigForm">
+
+                <!-- Activer le plugin -->
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input id="chkEnablePlugin" name="EnablePlugin" type="checkbox" is="emby-checkbox" />
+                        <span>Activer le plugin</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Injecte le bouton AutoPlay dans le lecteur vidéo. Désactiver cette option
+                        retire le bouton sans désinstaller le plugin.
+                    </div>
+                </div>
+
+                <!-- Démarrer en mode OFF par défaut -->
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label class="emby-checkbox-label">
+                        <input id="chkDefaultToStopped" name="DefaultToStopped" type="checkbox" is="emby-checkbox" />
+                        <span>Démarrer avec l'autoplay désactivé par défaut</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Si coché, chaque nouvel onglet démarrera avec l'autoplay bloqué.
+                        L'utilisateur pourra le réactiver manuellement depuis le lecteur.
+                    </div>
+                </div>
+
+                <br>
+
+                <!-- Bouton sauvegarder -->
+                <div>
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                        <span>Enregistrer</span>
+                    </button>
+                </div>
+
+            </form>
+
+            <!-- Aide -->
+            <div class="detailSection">
+                <h3>Comment utiliser</h3>
+                <ol>
+                    <li>Activez le plugin et sauvegardez.</li>
+                    <li>Rechargez la page Jellyfin (Ctrl+F5).</li>
+                    <li>Lancez la lecture d'un épisode — le bouton <strong>Autoplay ON/OFF</strong> apparaît dans la barre du lecteur.</li>
+                    <li>Cliquez dessus pour bloquer l'autoplay. Le bouton devient rouge.</li>
+                    <li>L'état se remet à <em>ON</em> automatiquement à la fermeture de l'onglet.</li>
+                </ol>
+                <p style="color: var(--text-color-secondary); font-size: 0.85em;">
+                    Version 1.0.0 — Plugin AutoPlay Stopper
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        /* global ApiClient, Dashboard */
+        (function () {
+            'use strict';
+
+            const pluginId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+
+            // Charge la config existante et remplit le formulaire
+            function loadConfig() {
+                ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                    document.getElementById('chkEnablePlugin').checked = config.EnablePlugin !== false;
+                    document.getElementById('chkDefaultToStopped').checked = !!config.DefaultToStopped;
+                });
+            }
+
+            // Sauvegarde la config
+            document.getElementById('AutoplayStopperConfigForm')
+                .addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        config.EnablePlugin = document.getElementById('chkEnablePlugin').checked;
+                        config.DefaultToStopped = document.getElementById('chkDefaultToStopped').checked;
+
+                        ApiClient.updatePluginConfiguration(pluginId, config).then(function () {
+                            Dashboard.processPluginConfigurationUpdateResult();
+                        });
+                    });
+                });
+
+            loadConfig();
+        })();
+    </script>
+</div>
+</body>
+</html>

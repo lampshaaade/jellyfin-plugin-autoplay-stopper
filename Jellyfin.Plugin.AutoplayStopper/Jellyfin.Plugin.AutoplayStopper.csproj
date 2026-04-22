@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Jellyfin.Plugin.AutoplayStopper</AssemblyName>
+    <RootNamespace>Jellyfin.Plugin.AutoplayStopper</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Nullable>enable</Nullable>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <Version>1.0.0.0</Version>
+  </PropertyGroup>
+
+  <!-- Embed the client-side JS as a resource inside the DLL -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\autoplayStopper.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Jellyfin server SDK - référencé comme NuGet, ne sera pas inclus dans le zip final -->
+    <PackageReference Include="Jellyfin.Controller" Version="10.9.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+  </ItemGroup>
+
+</Project>
