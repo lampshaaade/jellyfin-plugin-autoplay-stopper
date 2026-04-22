@@ -1,0 +1,80 @@
+name: Build & Release Plugin
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: Restore dependencies
+        run: dotnet restore Jellyfin.Plugin.AutoplayStopper/Jellyfin.Plugin.AutoplayStopper.csproj
+
+      - name: Build (Release)
+        run: |
+          dotnet publish Jellyfin.Plugin.AutoplayStopper/Jellyfin.Plugin.AutoplayStopper.csproj \
+            --configuration Release \
+            --output ./publish \
+            --no-self-contained
+
+      - name: Package plugin zip
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          mkdir -p dist
+          cd publish
+          zip -j "../dist/autoplay-stopper_${VERSION}.zip" Jellyfin.Plugin.AutoplayStopper.dll
+          cd ..
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Compute MD5 checksum
+        id: checksum
+        run: |
+          MD5=$(md5sum dist/autoplay-stopper_${VERSION}.zip | awk '{print $1}')
+          echo "md5=${MD5}" >> $GITHUB_OUTPUT
+          echo "Checksum: ${MD5}"
+
+      - name: Update manifest checksum
+        run: |
+          REPO="${{ github.repository }}"
+          VERSION="${{ env.VERSION }}"
+          MD5="${{ steps.checksum.outputs.md5 }}"
+          sed -i "s|REPLACE_WITH_MD5_OF_ZIP|${MD5}|g" manifest.json
+          sed -i "s|YOUR_USERNAME/jellyfin-plugin-autoplay-stopper|${REPO}|g" manifest.json
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: autoplay-stopper-plugin
+          path: |
+            dist/*.zip
+            manifest.json
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          body: |
+            ## AutoPlay Stopper v${{ env.VERSION }}
+
+            ### Installation
+            Ajoutez l'URL du manifest dans **Dashboard > Plugins > Dépôts**.
+
+            ### Checksum MD5
+            `${{ steps.checksum.outputs.md5 }}`
